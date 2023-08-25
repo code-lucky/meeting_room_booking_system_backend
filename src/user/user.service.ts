@@ -28,7 +28,6 @@ export class UserService {
 
     // 注册接口
     async register(user: RegisterUserDto) {
-        await this.redisService.set('haha','654321',200)
         // 获取redis里面的验证码
         const captcha = await this.redisService.get(`captcha_${user.email}`);
         this.logger.log(`captcha_${user.email}`)
