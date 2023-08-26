@@ -9,6 +9,8 @@ import { Role } from './entities/role.entity';
 import { Permission } from './entities/permission.entity';
 import { LoginUserDto } from './dto/login-user.dto';
 import { LoginUserVo } from './vo/login-user.vo';
+import { UpdateUserPasswordDto } from './dto/update-user-password.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UserService {
@@ -127,7 +129,96 @@ export class UserService {
                 return arr;
             }, [])
         }
-    }    
+    }
+
+
+    async findUserDetailById(userId: number){
+        const user = await this.userRepository.findOne({
+            where:{
+                id:userId
+            }
+        })
+        return user;
+    }
+
+    async updatePassword(userId: number, passwordDto: UpdateUserPasswordDto){
+        const captcha = await this.redisService.get(`update_password_captcha_${passwordDto.email}`)
+
+        if(!captcha){
+            throw new HttpException('验证码已失效', HttpStatus.BAD_REQUEST)
+        }
+
+        if(passwordDto.captcha != captcha){
+            throw new HttpException('验证码不正确', HttpStatus.BAD_REQUEST)
+        }
+
+        const foundUser = await this.userRepository.findOne({
+            where:{
+                id:userId
+            }
+        })
+
+        foundUser.password = md5(passwordDto.password)
+
+        try{
+            await this.userRepository.save(foundUser)
+            return '密码修改成功'
+        }catch(e){
+            this.logger.error(e, UserService)
+            return '密码修改失败'
+        }
+    }
+
+
+    async updateUser(userId: number, updateUser: UpdateUserDto){
+        const captcha = await this.redisService.get(`update_user_captcha_${updateUser.email}`)
+
+        if(!captcha){
+            throw new HttpException('验证码已失效', HttpStatus.BAD_REQUEST)
+        }
+
+        if(captcha != updateUser.captcha){
+            throw new HttpException('验证码不正确', HttpStatus.BAD_REQUEST)
+        }
+
+        const foundUser = await this.userRepository.findOne({
+            where:{
+                id: userId
+            }
+        })
+
+        if(updateUser.nickName){
+            foundUser.nickName = updateUser.nickName
+        }
+
+        if(updateUser.headPic){
+            foundUser.headPic = updateUser.headPic
+        }
+
+        try{
+            await this.userRepository.save(foundUser)
+            return '信息修改成功'
+        }catch(e){
+            this.logger.error(e, UserService)
+            return '信息修改失败'
+        }
+    }
+
+    async freeze(userId: number){
+        const user = await this.userRepository.findOneBy({
+            id: userId
+        })
+
+        user.isFrozen = true
+
+        try{
+            await this.userRepository.save(user)
+            return '修改成功'
+        }catch(e){
+            this.logger.error(e,UserService)
+            return '修改失败'
+        }
+    }
 
     async initData() {
         const user1 = new User();

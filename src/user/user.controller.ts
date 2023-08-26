@@ -6,18 +6,16 @@ import { RedisService } from 'src/redis/redis.service';
 import { LoginUserDto } from './dto/login-user.dto';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { RequireLogin, RequirePermission } from 'src/custom.decorator';
+import { RequireLogin, UserInfo } from 'src/custom.decorator';
+import { UserDetailVo } from './vo/user-info.vo';
+import { UpdateUserPasswordDto } from './dto/update-user-password.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Controller('user')
 export class UserController {
   private logger = new Logger();
 
   constructor(private readonly userService: UserService) {}
-
-  @Post('/register')
-  register(@Body() registerUser:RegisterUserDto) {
-    return this.userService.register(registerUser)
-  }
 
   @Inject(EmailService)
   private emailService: EmailService;
@@ -31,6 +29,11 @@ export class UserController {
   @Inject(ConfigService)
   private configService: ConfigService;
 
+  @Post('/register')
+  register(@Body() registerUser:RegisterUserDto) {
+    return this.userService.register(registerUser)
+  }
+
   @Get('register-captcha')
   async captcha(@Query('address') address: string) {
       const code = Math.random().toString().slice(2,8);
@@ -41,6 +44,20 @@ export class UserController {
         to: address,
         subject: '注册验证码',
         html: `<p>你的注册验证码是 ${code}</p>`
+      });
+      return '发送成功';
+  }
+
+  @Get('update-password-captcha')
+  async updatePasswordCaptcha(@Query('address') address: string) {
+      const code = Math.random().toString().slice(2,8);
+
+      await this.redisService.set(`update_password_captcha_${address}`, code, 5 * 60);
+
+      await this.emailService.sendMail({
+        to: address,
+        subject: '修改密码验证码',
+        html: `<p>你的修改密码验证码是 ${code}</p>`
       });
       return '发送成功';
   }
@@ -155,15 +172,36 @@ export class UserController {
       }
   }
 
-  @Get('aaa')
+  @Get('info')
   @RequireLogin()
-  @RequirePermission('ddd')
-  aaaa() {
-      return 'aaa';
+  async info(@UserInfo('userId') userId: number){
+    const user = await this.userService.findUserDetailById(userId);
+
+    const vo = new UserDetailVo();
+    vo.id = user.id;
+    vo.email = user.email;
+    vo.username = user.username;
+    vo.headPic = user.headPic;
+    vo.phoneNumber = user.phoneNumber;
+    vo.nickName = user.nickName;
+    vo.createTime = user.createTime;
+    vo.isFrozen = user.isFrozen;
+    return vo;
   }
 
-  @Get('bbb')
-  bbb() {
-      return 'bbb';
+  @Post(['update_password','admin/update_password'])
+  @RequireLogin()
+  async updatePassword(@UserInfo('userId') userId: number, @Body() passwordDto: UpdateUserPasswordDto){
+    return this.userService.updatePassword(userId, passwordDto)
+  }
+
+  @Post(['update','admin/update'])
+  async updateUser(@UserInfo('userId') userId: number,updateUser: UpdateUserDto){
+    return this.userService.updateUser(userId, updateUser)
+  }
+
+  @Get('freeze')
+  async freeze(@Query('id') userId: number){
+    return this.userService.freeze(userId)
   }
 }
