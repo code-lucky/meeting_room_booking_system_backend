@@ -220,6 +220,20 @@ export class UserService {
         }
     }
 
+    async findUsersByPage(pageNo: number, pageSize: number){
+        const skipCount = (pageNo-1) * pageSize
+
+        const [users, totalCount] = await this.userRepository.findAndCount({
+            skip:skipCount,
+            take:pageSize
+        })
+
+        return{
+            users,
+            totalCount
+        }
+    }
+
     async initData() {
         const user1 = new User();
         user1.username = "zhangsan";

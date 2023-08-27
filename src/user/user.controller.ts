@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Inject, UnauthorizedException, Logger, SetMetadata } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Inject, UnauthorizedException, Logger, SetMetadata, ParseIntPipe, BadRequestException } from '@nestjs/common';
 import { UserService } from './user.service';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { EmailService } from 'src/email/email.service';
@@ -203,5 +203,21 @@ export class UserController {
   @Get('freeze')
   async freeze(@Query('id') userId: number){
     return this.userService.freeze(userId)
+  }
+
+  @Get('list')
+  async list(
+    @Query('pageNo', new ParseIntPipe({
+      exceptionFactory() {
+        throw new BadRequestException('pageNo 应该传数字');
+      } 
+    })) pageNo: number,
+    @Query('pageSize', new ParseIntPipe({
+      exceptionFactory() {
+        throw new BadRequestException('pageSize 应该传数字');
+      } 
+    })) pageSize: number
+  ){
+    return this.userService.findUsersByPage(pageNo, pageSize)
   }
 }
