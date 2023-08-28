@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Inject, UnauthorizedException, Logger, SetMetadata, ParseIntPipe, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Inject, UnauthorizedException, Logger, SetMetadata, ParseIntPipe, BadRequestException, DefaultValuePipe } from '@nestjs/common';
 import { UserService } from './user.service';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { EmailService } from 'src/email/email.service';
@@ -10,6 +10,7 @@ import { RequireLogin, UserInfo } from 'src/custom.decorator';
 import { UserDetailVo } from './vo/user-info.vo';
 import { UpdateUserPasswordDto } from './dto/update-user-password.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { generateParseIntPipe } from 'src/utils';
 
 @Controller('user')
 export class UserController {
@@ -207,17 +208,12 @@ export class UserController {
 
   @Get('list')
   async list(
-    @Query('pageNo', new ParseIntPipe({
-      exceptionFactory() {
-        throw new BadRequestException('pageNo 应该传数字');
-      } 
-    })) pageNo: number,
-    @Query('pageSize', new ParseIntPipe({
-      exceptionFactory() {
-        throw new BadRequestException('pageSize 应该传数字');
-      } 
-    })) pageSize: number
+    @Query('pageNo', new DefaultValuePipe(1), generateParseIntPipe('pageNo')) pageNo: number,
+    @Query('pageSize', new DefaultValuePipe(2), generateParseIntPipe('pageSize')) pageSize: number,
+    @Query('username') username: string,
+    @Query('nickName') nickName: string,
+    @Query('email') email: string
   ){
-    return this.userService.findUsersByPage(pageNo, pageSize)
+    return this.userService.findUsersByPage(username, nickName, email, pageNo, pageSize)
   }
 }
