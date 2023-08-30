@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Inject, UnauthorizedException, Logger, SetMetadata, ParseIntPipe, BadRequestException, DefaultValuePipe, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Inject, UnauthorizedException, Logger, SetMetadata, ParseIntPipe, BadRequestException, DefaultValuePipe, HttpStatus, HttpCode } from '@nestjs/common';
 import { UserService } from './user.service';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { EmailService } from 'src/email/email.service';
@@ -46,6 +46,7 @@ export class UserController {
       type: String
   })
   @Post('/register')
+  @HttpCode(HttpStatus.OK)
   register(@Body() registerUser:RegisterUserDto) {
     return this.userService.register(registerUser)
   }
@@ -120,6 +121,7 @@ export class UserController {
       description: '用户信息和 token',
       type: LoginUserVo
   })
+  @HttpCode(HttpStatus.OK)
   @Post('login')
   async userLogin(@Body() loginUser:LoginUserDto){
     const vo = await this.userService.login(loginUser, false);
@@ -155,6 +157,7 @@ export class UserController {
       description: '用户信息和 token',
       type: LoginUserVo
   })
+  @HttpCode(HttpStatus.OK)
   @Post('admin/login')
   async adminLogin(@Body() loginUser:LoginUserDto){
     const vo = await this.userService.login(loginUser, true);
@@ -301,6 +304,7 @@ export class UserController {
     type: String,
     description: '验证码已失效/不正确'
   })
+  @HttpCode(HttpStatus.OK)
   @Post(['update_password','admin/update_password'])
   @RequireLogin()
   async updatePassword(@UserInfo('userId') userId: number, @Body() passwordDto: UpdateUserPasswordDto){
@@ -320,6 +324,7 @@ export class UserController {
       description: '更新成功',
       type: String
   })
+  @HttpCode(HttpStatus.OK)
   @Post(['update','admin/update'])
   async updateUser(@UserInfo('userId') userId: number,updateUser: UpdateUserDto){
     return this.userService.updateUser(userId, updateUser)
