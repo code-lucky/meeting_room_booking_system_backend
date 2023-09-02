@@ -10,15 +10,20 @@ import { ConfigService } from '@nestjs/config';
     {
       provide: 'REDIS_CLIENT',
       async useFactory(configService:ConfigService) {
-        const client = createClient({
-            socket: {
-                host: configService.get('redis_server_host'),
-                port: configService.get('redis_server_port')
-            },
-            database: configService.get('redis_server_db')
-        });
-        await client.connect();
-        return client;
+        // const client = createClient({
+        //     socket: {
+        //         host: configService.get('redis_server_host'),
+        //         port: configService.get('redis_server_port')
+        //     },
+        //     database: configService.get('redis_server_db')
+        // });
+        // await client.connect();
+        // return client;
+        return{
+          host: configService.get('redis_server_host'),
+          port: configService.get('redis_server_port'),
+          database: configService.get('redis_server_db')
+        }
       },
       inject: [ConfigService]
     }
